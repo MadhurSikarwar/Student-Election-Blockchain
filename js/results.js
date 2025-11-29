@@ -1,70 +1,62 @@
 /* js/results.js */
 
-// Mock Data - In a real app, this comes from the Blockchain
-const mockElectionData = {
-    candidates: [
-        { id: 1, name: "Alex Reynolds", votes: 450 },
-        { id: 2, name: "Sarah Jenkins", votes: 180 },
-        { id: 3, name: "Mike Thompson", votes: 70 }
-    ],
-    totalVotes: 700
-};
-
 /**
- * Main function to load and display results
+ * INITIALIZE RESULTS LISTENER
+ * Connects to Firestore and updates graphs in real-time
  */
-function refreshResults() {
-    console.log("Fetching live data from blockchain node...");
+function initResults() {
+    console.log("Connecting to Live Election Ledger...");
 
-    // TODO: Connect to Web3 to get real counts
-    // const results = await contract.methods.getResults().call();
-    
-    // Simulate network delay for effect
-    const btn = document.querySelector('.btn-secondary');
-    if(btn) btn.innerText = "Refreshing...";
-    
-    setTimeout(() => {
-        updateDashboard(mockElectionData);
-        if(btn) btn.innerText = "Refresh Data ↻";
-    }, 800);
-}
+    const candidatesRef = db.collection("candidates");
 
-/**
- * Updates the DOM elements with the calculated data
- */
-function updateDashboard(data) {
-    document.getElementById('total-votes').innerText = data.totalVotes;
-
-    data.candidates.forEach(candidate => {
-        const countId = `count-${candidate.id}`;
-        const barId = `bar-${candidate.id}`;
+    // Listen for real-time updates
+    candidatesRef.onSnapshot((snapshot) => {
         
-        // Calculate Percentage
-        const percentage = ((candidate.votes / data.totalVotes) * 100).toFixed(1);
+        let totalVotes = 0;
+        let candidateData = {};
 
-        // Update Text
-        const countEl = document.getElementById(countId);
-        if (countEl) countEl.innerText = `${candidate.votes} Votes`;
+        // 1. First Pass: Calculate Total Votes
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const votes = data.voteCount || 0;
+            
+            candidateData[doc.id] = votes;
+            totalVotes += votes;
+        });
 
-        // Update Bar Width & Label
-        const barEl = document.getElementById(barId);
-        if (barEl) {
-            barEl.style.width = `${percentage}%`;
-            barEl.querySelector('.percentage').innerText = `${percentage}%`;
-        }
+        // Update Total Counter
+        document.getElementById('total-votes').innerText = totalVotes;
+
+        // 2. Second Pass: Update UI Bars
+        // IDs must match the button IDs in vote.html (1, 2, 3)
+        [1, 2, 3].forEach(id => {
+            const votes = candidateData[id] || 0; // Default to 0 if no votes yet
+            
+            // Avoid division by zero
+            const percentage = totalVotes > 0 ? ((votes / totalVotes) * 100).toFixed(1) : 0;
+
+            const countId = `count-${id}`;
+            const barId = `bar-${id}`;
+
+            // Update Text
+            const countEl = document.getElementById(countId);
+            if (countEl) countEl.innerText = `${votes} Votes`;
+
+            // Update Bar Width & Label
+            const barEl = document.getElementById(barId);
+            if (barEl) {
+                barEl.style.width = `${percentage}%`;
+                const percentText = barEl.querySelector('.percentage');
+                if(percentText) percentText.innerText = `${percentage}%`;
+            }
+        });
+
+    }, (error) => {
+        console.error("Error getting results:", error);
     });
 }
 
-// Initialize on Page Load with animation
+// Start listening when page loads
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Reset bars to 0 for animation effect
-    [1, 2, 3].forEach(id => {
-        const bar = document.getElementById(`bar-${id}`);
-        if(bar) bar.style.width = '0%';
-    });
-
-    // 2. Trigger data load after slight delay
-    setTimeout(() => {
-        refreshResults();
-    }, 100);
+    initResults();
 });

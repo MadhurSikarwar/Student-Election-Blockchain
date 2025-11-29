@@ -1,52 +1,80 @@
 /* js/vote.js */
 
 /**
- * Handles the voting process when a "Vote" button is clicked.
- * @param {number} candidateId - The ID of the candidate
- * @param {string} candidateName - The name of the candidate
+ * CAST VOTE FUNCTION
+ * Uses a Firebase Transaction to ensure integrity.
  */
 async function castVote(candidateId, candidateName) {
     
-    // 1. Check Local Storage to simulate "One Person, One Vote"
-    if (localStorage.getItem("hasVoted") === "true") {
-        alert("⚠️ You have already cast your vote! \n\nBlockchain records are immutable.");
+    // 1. Check if user is logged in
+    const user = auth.currentUser;
+    
+    if (!user) {
+        alert("You must be logged in to vote!");
+        window.location.href = "login.html";
         return;
     }
 
-    // 2. Confirm the action
     const confirmVote = confirm(`Are you sure you want to vote for ${candidateName}?\nThis action cannot be undone.`);
-    
     if (!confirmVote) return;
 
-    // 3. UI Feedback - Simulate loading state
+    // UI Feedback
     const buttons = document.querySelectorAll('button');
     buttons.forEach(btn => {
         btn.disabled = true;
         btn.innerText = "Processing...";
     });
 
+    // 2. Define References
+    const userRef = db.collection("users").doc(user.uid);
+    // Note: Ensure you have a 'candidates' collection. IDs should match 1, 2, 3 strings or numbers.
+    // We convert ID to string to use as Document ID
+    const candidateRef = db.collection("candidates").doc(String(candidateId));
+
     try {
-        console.log(`Initiating transaction for Candidate ID: ${candidateId}...`);
+        await db.runTransaction(async (transaction) => {
+            
+            // A. READ: Get the fresh user data
+            const userDoc = await transaction.get(userRef);
+            
+            if (!userDoc.exists) {
+                throw "User data not found.";
+            }
 
-        // TODO: Replace this timeout with actual Web3/Smart Contract call
-        // Example: await contract.methods.vote(candidateId).send({ from: userAccount });
-        
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Fake network delay
+            // B. CHECK: Has the user already voted?
+            if (userDoc.data().hasVoted) {
+                throw "You have ALREADY voted. Double voting is not allowed.";
+            }
 
-        // 4. Success Handling
-        localStorage.setItem("hasVoted", "true");
-        localStorage.setItem("votedFor", candidateName); // Optional: remember who they voted for
+            // C. WRITE: Update Candidate Count & User Status
+            // We use 'increment' so we don't need to read the candidate count first
+            transaction.set(candidateRef, { 
+                name: candidateName,
+                voteCount: firebase.firestore.FieldValue.increment(1) 
+            }, { merge: true });
 
-        alert(`✅ Success! \n\nYour vote for ${candidateName} has been recorded on the ledger.`);
-        
-        // 5. Redirect to Results
+            transaction.update(userRef, { 
+                hasVoted: true,
+                votedFor: candidateId, // Optional: tracking
+                votedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        // 3. Success
+        alert(`✅ Success! \n\nYour vote for ${candidateName} has been recorded.`);
         window.location.href = "results.html";
 
     } catch (error) {
         console.error("Voting failed:", error);
-        alert("Transaction failed. Please try again.");
         
-        // Reset buttons on failure
+        // Handle specific double-vote error vs network error
+        if (typeof error === "string" && error.includes("ALREADY")) {
+            alert("⚠️ Security Alert: " + error);
+        } else {
+            alert("Transaction failed. Please try again.");
+        }
+
+        // Reset buttons
         buttons.forEach(btn => {
             btn.disabled = false;
             btn.innerText = "Vote";

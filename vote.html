@@ -1,12 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cast Your Vote | E-Vote</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/vote.css">
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+    <script src="js/firebase-config.js"></script>
 </head>
+
 <body>
 
     <nav class="navbar glass">
@@ -27,10 +35,11 @@
         </header>
 
         <div class="candidates-grid">
-            
+
             <div class="candidate-card glass">
                 <div class="card-image">
-                    <img src="https://ui-avatars.com/api/?name=Alex+R&background=6a11cb&color=fff&size=128" alt="Candidate">
+                    <img src="https://ui-avatars.com/api/?name=Alex+R&background=6a11cb&color=fff&size=128"
+                        alt="Candidate">
                 </div>
                 <div class="card-info">
                     <h3>Alex Reynolds</h3>
@@ -43,7 +52,8 @@
 
             <div class="candidate-card glass">
                 <div class="card-image">
-                    <img src="https://ui-avatars.com/api/?name=Sarah+J&background=2575fc&color=fff&size=128" alt="Candidate">
+                    <img src="https://ui-avatars.com/api/?name=Sarah+J&background=2575fc&color=fff&size=128"
+                        alt="Candidate">
                 </div>
                 <div class="card-info">
                     <h3>Sarah Jenkins</h3>
@@ -56,7 +66,8 @@
 
             <div class="candidate-card glass">
                 <div class="card-image">
-                    <img src="https://ui-avatars.com/api/?name=Mike+T&background=ff416c&color=fff&size=128" alt="Candidate">
+                    <img src="https://ui-avatars.com/api/?name=Mike+T&background=ff416c&color=fff&size=128"
+                        alt="Candidate">
                 </div>
                 <div class="card-info">
                     <h3>Mike Thompson</h3>
@@ -73,4 +84,5 @@
     <script src="blockchain/election.js"></script>
     <script src="js/vote.js"></script>
 </body>
+
 </html>

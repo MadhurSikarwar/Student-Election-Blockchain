@@ -6,6 +6,11 @@
     <title>Student Registration | E-Vote</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/register.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
 </head>
 <body>
 
@@ -35,6 +40,11 @@
                 <div class="input-group">
                     <label>College ID</label>
                     <input type="text" id="regCollegeId" placeholder="1RV21CS..." required>
+                </div>
+
+                <div class="input-group">
+                    <label>Official Email</label>
+                    <input type="email" id="regEmail" placeholder="name@student.rvce.edu" required>
                 </div>
 
                 <div class="input-group">

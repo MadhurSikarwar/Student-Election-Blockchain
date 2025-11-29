@@ -6,6 +6,11 @@
     <title>Student Login | E-Vote</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/login.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
 </head>
 <body>
 
@@ -27,8 +32,8 @@
             
             <form id="loginForm" onsubmit="event.preventDefault(); loginUser();">
                 <div class="input-group">
-                    <label>College ID</label>
-                    <input type="text" id="collegeId" placeholder="Enter your ID (e.g. 1RV21CS...)" required>
+                    <label>College ID or Email</label>
+                    <input type="text" id="loginInput" placeholder="Enter ID or Email" required>
                 </div>
 
                 <div class="input-group">

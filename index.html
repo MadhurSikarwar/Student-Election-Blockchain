@@ -1,34 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Election Portal | Home</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Config -->
+    <script src="js/firebase-config.js"></script>
 </head>
+
 <body>
 
     <nav class="navbar glass">
         <div class="logo">E-Vote 2025</div>
+        
+        <!-- Center Navigation -->
         <ul class="nav-links">
             <li><a href="index.html" class="active">Home</a></li>
             <li><a href="vote.html">Vote</a></li>
             <li><a href="results.html">Results</a></li>
-            <li><a href="login.html">Login</a></li>
             <li><a href="register.html">Register</a></li>
         </ul>
+
+        <!-- Right Side Auth Section -->
+        <div class="auth-section">
+            
+            <!-- 1. GUEST STATE: Login Button (Visible by default) -->
+            <button class="btn-login" id="login-btn" onclick="window.location.href='login.html'">Login</button>
+
+            <!-- 2. USER STATE: Profile Pill (Hidden by default) -->
+            <div class="user-profile" id="user-profile" style="display: none;">
+                <!-- Avatar Circle -->
+                <div class="avatar-circle" id="user-avatar">U</div>
+                <!-- Name -->
+                <span class="profile-name" id="user-name">User</span>
+                
+                <!-- Hover Dropdown -->
+                <div class="profile-dropdown">
+                    <div class="user-id-display" id="user-id-label">Loading ID...</div>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+        </div>
     </nav>
 
     <main class="container">
-        
+
         <header class="hero-section fade-in">
             <h1>Decentralized Student Elections</h1>
             <p>Secure. Transparent. Immutable. Powered by Blockchain Technology.</p>
         </header>
 
         <div class="dashboard-grid fade-in">
-            
+
             <a href="vote.html" class="card glass">
                 <div class="card-content">
                     <h2>🗳️ Cast Your Vote</h2>
@@ -66,4 +99,5 @@
 
     <script src="js/auth.js"></script>
 </body>
+
 </html>
