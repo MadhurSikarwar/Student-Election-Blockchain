@@ -1,8 +1,16 @@
 /* js/auth.js */
 
-/**
- * REGISTER NEW USER
- */
+// ==========================================
+// 🔧 CONFIGURATION 
+// ==========================================
+const EMAILJS_SERVICE_ID = "service_gr6vthl";   
+const EMAILJS_TEMPLATE_ID = "template_r3t9j8l"; 
+
+let generatedOTP = null; // Stores the code temporarily
+
+// ==========================================
+// 1. REGISTRATION
+// ==========================================
 function registerUser() {
     const fullName = document.getElementById("fullName").value;
     const collegeId = document.getElementById("regCollegeId").value;
@@ -24,12 +32,12 @@ function registerUser() {
     btn.innerText = "Creating Account...";
     btn.disabled = true;
 
-    // 1. Create User in Firebase Auth
+    // A. Create User in Firebase Auth
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
             const user = userCredential.user;
-
-            // 2. Save User Details in Firestore
+            
+            // B. Save User Details in Firestore
             return db.collection("users").doc(user.uid).set({
                 fullName: fullName,
                 collegeId: collegeId.toUpperCase(),
@@ -37,6 +45,10 @@ function registerUser() {
                 hasVoted: false,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+        })
+        .then(() => {
+            // C. Force Logout (User must login again to do 2FA)
+            return auth.signOut();
         })
         .then(() => {
             alert("Registration Successful! Please Login.");
@@ -50,9 +62,9 @@ function registerUser() {
         });
 }
 
-/**
- * LOGIN USER
- */
+// ==========================================
+// 2. LOGIN FLOW (Step 1: Check Password)
+// ==========================================
 async function loginUser() {
     const input = document.getElementById("loginInput").value.trim();
     const password = document.getElementById("password").value;
@@ -63,14 +75,15 @@ async function loginUser() {
     }
 
     const btn = document.querySelector('button');
-    btn.innerText = "Checking Credentials...";
+    btn.innerText = "Verifying Credentials...";
     btn.disabled = true;
 
     try {
         let emailToLogin = input;
 
-        // Smart Login: Check if input is ID or Email
+        // Smart Resolve: If input is ID, find the Email
         if (!input.includes("@")) {
+            // We keep this log as it's not sensitive, just process info
             console.log("Looking up email for ID:", input);
             const snapshot = await db.collection("users")
                 .where("collegeId", "==", input.toUpperCase())
@@ -82,8 +95,12 @@ async function loginUser() {
             emailToLogin = snapshot.docs[0].data().email;
         }
 
+        // A. Firebase Login (Checks Password)
         await auth.signInWithEmailAndPassword(emailToLogin, password);
-        window.location.href = "index.html";
+        
+        // B. If password is correct, start 2FA
+        btn.innerText = "Sending OTP...";
+        sendOTP(emailToLogin);
 
     } catch (error) {
         console.error(error);
@@ -93,83 +110,159 @@ async function loginUser() {
     }
 }
 
-/**
- * LOGOUT FUNCTION
- */
+// ==========================================
+// 3. OTP HANDLING (Step 2: Send Email)
+// ==========================================
+function sendOTP(email) {
+    // 1. Generate 6-digit random number
+    generatedOTP = Math.floor(100000 + Math.random() * 900000);
+    
+    // [SECURE] Removed console.log of the OTP here
+
+    // 2. Prepare Parameters
+    const templateParams = {
+        to_email: email,
+        otp_code: String(generatedOTP),       
+        time: new Date().toLocaleTimeString() 
+    };
+
+    const btn = document.querySelector('button');
+
+    // 3. Send Email
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+        .then(function(response) {
+            console.log('Email Sent Successfully!', response.status, response.text);
+            showOTPModal(email); 
+        })
+        .catch(function(error) {
+            console.error('FAILED...', error);
+            
+            // Detailed Error for debugging
+            alert(`Email Error: ${JSON.stringify(error)}\nCheck console for details.`);
+            
+            if(btn) {
+                btn.innerText = "Login";
+                btn.disabled = false;
+            }
+        });
+}
+
+function showOTPModal(email) {
+    const modal = document.getElementById('otpModal');
+    const emailDisplay = document.getElementById('otpEmailDisplay');
+    
+    if(modal && emailDisplay) {
+        emailDisplay.innerText = `Sent to: ${email}`;
+        modal.style.display = 'flex';
+    }
+}
+
+function closeOTPModal() {
+    // If closed without verifying, log out immediately
+    const modal = document.getElementById('otpModal');
+    if(modal) modal.style.display = 'none';
+    
+    auth.signOut().then(() => {
+        const btn = document.querySelector('#loginForm button');
+        if(btn) {
+            btn.innerText = "Login";
+            btn.disabled = false;
+        }
+    });
+}
+
+// ==========================================
+// 4. VERIFY OTP (Step 3: Check Code)
+// ==========================================
+function verifyOTP() {
+    const userOtp = document.getElementById('otpInput').value;
+    
+    // Compare input with the generated number
+    if (parseInt(userOtp) === generatedOTP) {
+        // SUCCESS! Mark session as verified
+        sessionStorage.setItem('is2FAVerified', 'true');
+        window.location.href = "index.html";
+    } else {
+        alert("Invalid OTP. Please try again.");
+    }
+}
+
+// ==========================================
+// 5. LOGOUT
+// ==========================================
 function logout() {
+    sessionStorage.removeItem('is2FAVerified'); // Clear 2FA flag
     auth.signOut().then(() => {
         window.location.href = "login.html";
     });
 }
 
-/**
- * AUTH STATE LISTENER & UI UPDATER
- * This handles the Profile Pill and Dropdown population
- */
+// ==========================================
+// 6. AUTH STATE LISTENER (The Brain)
+// ==========================================
 auth.onAuthStateChanged(async (user) => {
     const path = window.location.pathname;
     const isPublicPage = path.includes("login.html") || path.includes("register.html");
+    const isVerified = sessionStorage.getItem('is2FAVerified') === 'true';
 
     // UI Elements
     const loginBtn = document.getElementById("login-btn");
     const userProfile = document.getElementById("user-profile");
-
-    // Profile Data Elements
     const userNameEl = document.getElementById("user-name");
     const userAvatarEl = document.getElementById("user-avatar");
     const userIdLabel = document.getElementById("user-id-label");
 
     if (user) {
-        // --- USER LOGGED IN ---
-        console.log("User detected:", user.uid);
+        // --- USER IS AUTHENTICATED ---
+        console.log("User Auth Status: Logged In");
 
-        // 1. Toggle UI Visibility
-        if (loginBtn) loginBtn.style.display = "none";
-        if (userProfile) userProfile.style.display = "flex";
+        // SECURITY: If not 2FA verified, stay on login page or redirect there
+        if (!isVerified && !isPublicPage) {
+            console.warn("2FA Not Verified. Redirecting to Login.");
+            window.location.href = "login.html";
+            return;
+        }
 
-        // 2. Fetch User Details from Firestore to populate Profile
-        if (userNameEl && userIdLabel) {
-            try {
-                const doc = await db.collection("users").doc(user.uid).get();
-                if (doc.exists) {
-                    const data = doc.data();
+        // If Verified, Update UI
+        if (isVerified) {
+            if (loginBtn) loginBtn.style.display = "none";
+            if (userProfile) userProfile.style.display = "flex";
 
-                    // Update Name
-                    userNameEl.innerText = data.fullName ? data.fullName.split(" ")[0] : "Student";
-
-                    // Update Avatar (First Letter)
-                    userAvatarEl.innerText = data.fullName ? data.fullName.charAt(0).toUpperCase() : "U";
-
-                    // Update Dropdown ID
-                    userIdLabel.innerText = `ID: ${data.collegeId}`;
-                } else {
-                    // Fallback if database record is missing (but user exists in Auth)
-                    console.warn("User document missing in Firestore. Using Auth email.");
-                    userNameEl.innerText = "User";
-                    userIdLabel.innerText = user.email; // Show email if ID is missing
+            // Fetch Profile Data for Navbar
+            if (userNameEl && userIdLabel) {
+                try {
+                    const doc = await db.collection("users").doc(user.uid).get();
+                    if (doc.exists) {
+                        const data = doc.data();
+                        userNameEl.innerText = data.fullName ? data.fullName.split(" ")[0] : "Student";
+                        userAvatarEl.innerText = data.fullName ? data.fullName.charAt(0).toUpperCase() : "U";
+                        userIdLabel.innerText = `ID: ${data.collegeId}`;
+                    } else {
+                        // Fallback if DB record missing
+                        userNameEl.innerText = "User";
+                        userIdLabel.innerText = user.email;
+                    }
+                } catch (error) {
+                    console.error("Profile Load Error", error);
                 }
-            } catch (error) {
-                console.error("Error fetching user profile:", error);
-                userIdLabel.innerText = "Error loading data";
+            }
+
+            // If on login page but verified, go to dashboard
+            if (isPublicPage) {
+                window.location.href = "index.html";
             }
         }
-
-        // 3. Redirect if on Login/Register page
-        if (isPublicPage) {
-            window.location.href = "index.html";
-        }
-
     } else {
-        // --- USER LOGGED OUT ---
-        console.log("No user logged in.");
+        // --- USER IS LOGGED OUT ---
+        console.log("User Auth Status: Signed Out");
+        sessionStorage.removeItem('is2FAVerified');
 
-        // 1. Toggle UI Visibility
         if (loginBtn) loginBtn.style.display = "block";
         if (userProfile) userProfile.style.display = "none";
 
-        // 2. Protect Routes
+        // Protect Dashboard Routes
         if (!isPublicPage && (path.includes("vote.html") || path.includes("results.html"))) {
-            // window.location.href = "login.html"; // Uncomment to enforce login
+             // window.location.href = "login.html"; // Uncomment to enforce strict security
         }
     }
 });
