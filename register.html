@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration | E-Vote</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/register.css">
+</head>
+<body>
+
+    <nav class="navbar glass">
+        <div class="logo" onclick="window.location.href='index.html'">E-Vote 2025</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="vote.html">Vote</a></li>
+            <li><a href="results.html">Results</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="register.html" class="active">Register</a></li>
+        </ul>
+    </nav>
+
+    <div class="register-container fade-in">
+        <div class="glass register-card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Join the Decentralized Platform</p>
+            
+            <form id="registerForm" onsubmit="event.preventDefault(); registerUser();">
+                
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="fullName" placeholder="John Doe" required>
+                </div>
+
+                <div class="input-group">
+                    <label>College ID</label>
+                    <input type="text" id="regCollegeId" placeholder="1RV21CS..." required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="regPassword" placeholder="Create a password" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+                </div>
+
+                <button type="submit" class="btn full-width">Sign Up</button>
+            </form>
+
+            <div class="footer-links">
+                <p>Already registered? <a href="login.html">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>

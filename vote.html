@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cast Your Vote | E-Vote</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/vote.css">
+</head>
+<body>
+
+    <nav class="navbar glass">
+        <div class="logo" onclick="window.location.href='index.html'">E-Vote 2025</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="vote.html" class="active">Vote</a></li>
+            <li><a href="results.html">Results</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="register.html">Register</a></li>
+        </ul>
+    </nav>
+
+    <main class="container fade-in">
+        <header class="vote-header">
+            <h1>Student Council Election</h1>
+            <p>Select your preferred candidate. This action is irreversible and recorded on the blockchain.</p>
+        </header>
+
+        <div class="candidates-grid">
+            
+            <div class="candidate-card glass">
+                <div class="card-image">
+                    <img src="https://ui-avatars.com/api/?name=Alex+R&background=6a11cb&color=fff&size=128" alt="Candidate">
+                </div>
+                <div class="card-info">
+                    <h3>Alex Reynolds</h3>
+                    <p class="position">President Nominee</p>
+                    <p class="bio">CSE Dept • 3rd Year</p>
+                    <p class="manifesto">"Innovating campus tech & open source culture."</p>
+                    <button class="btn full-width" onclick="castVote(1, 'Alex Reynolds')">Vote for Alex</button>
+                </div>
+            </div>
+
+            <div class="candidate-card glass">
+                <div class="card-image">
+                    <img src="https://ui-avatars.com/api/?name=Sarah+J&background=2575fc&color=fff&size=128" alt="Candidate">
+                </div>
+                <div class="card-info">
+                    <h3>Sarah Jenkins</h3>
+                    <p class="position">President Nominee</p>
+                    <p class="bio">ECE Dept • 4th Year</p>
+                    <p class="manifesto">"Sustainable campus & better lab facilities."</p>
+                    <button class="btn full-width" onclick="castVote(2, 'Sarah Jenkins')">Vote for Sarah</button>
+                </div>
+            </div>
+
+            <div class="candidate-card glass">
+                <div class="card-image">
+                    <img src="https://ui-avatars.com/api/?name=Mike+T&background=ff416c&color=fff&size=128" alt="Candidate">
+                </div>
+                <div class="card-info">
+                    <h3>Mike Thompson</h3>
+                    <p class="position">President Nominee</p>
+                    <p class="bio">Mech Dept • 3rd Year</p>
+                    <p class="manifesto">"More sports events & cultural inclusivity."</p>
+                    <button class="btn full-width" onclick="castVote(3, 'Mike Thompson')">Vote for Mike</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="blockchain/election.js"></script>
+    <script src="js/vote.js"></script>
+</body>
+</html>

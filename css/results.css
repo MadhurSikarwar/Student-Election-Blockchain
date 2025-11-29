@@ -1,0 +1,133 @@
+/* css/results.css */
+
+.results-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.results-header h1 {
+    font-size: 2.5rem;
+}
+
+.results-card {
+    padding: 40px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.results-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+}
+
+.results-header-row h3 {
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+/* Pulsing Live Indicator */
+.live-indicator {
+    color: #ff4b2b;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.live-indicator::before {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 10px;
+    background-color: #ff4b2b;
+    border-radius: 50%;
+    box-shadow: 0 0 0 rgba(255, 75, 43, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 75, 43, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 75, 43, 0); }
+}
+
+/* Result Items */
+.result-item {
+    margin-bottom: 25px;
+}
+
+.candidate-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.name {
+    color: #fff;
+}
+
+.vote-count {
+    color: var(--text-muted);
+}
+
+/* Progress Bars */
+.progress-bg {
+    background: rgba(255, 255, 255, 0.05);
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    width: 0%; /* Default starting width for animation */
+    transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 0 10px rgba(106, 17, 203, 0.5);
+}
+
+.percentage {
+    font-size: 0.75rem;
+    color: white;
+    font-weight: 700;
+}
+
+/* Alternate Colors for different candidates */
+.color-2 {
+    background: linear-gradient(90deg, #11998e, #38ef7d);
+    box-shadow: 0 0 10px rgba(56, 239, 125, 0.4);
+}
+
+.color-3 {
+    background: linear-gradient(90deg, #ff9966, #ff5e62);
+    box-shadow: 0 0 10px rgba(255, 94, 98, 0.4);
+}
+
+.total-stats {
+    margin-top: 30px;
+    text-align: right;
+    font-size: 0.9rem;
+    color: #ccc;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.refresh-container {
+    text-align: center;
+    margin-top: 40px;
+}

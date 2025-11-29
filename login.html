@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login | E-Vote</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+    <nav class="navbar glass">
+        <div class="logo" onclick="window.location.href='index.html'">E-Vote 2025</div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="vote.html">Vote</a></li>
+            <li><a href="results.html">Results</a></li>
+            <li><a href="login.html" class="active">Login</a></li>
+            <li><a href="register.html">Register</a></li>
+        </ul>
+    </nav>
+
+    <div class="login-container fade-in">
+        <div class="glass login-card">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">Secure Blockchain Login</p>
+            
+            <form id="loginForm" onsubmit="event.preventDefault(); loginUser();">
+                <div class="input-group">
+                    <label>College ID</label>
+                    <input type="text" id="collegeId" placeholder="Enter your ID (e.g. 1RV21CS...)" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn full-width">Login</button>
+            </form>
+
+            <div class="footer-links">
+                <p>Don't have an account? <a href="register.html">Register here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>
