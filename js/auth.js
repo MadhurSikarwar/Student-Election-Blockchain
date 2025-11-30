@@ -1,25 +1,82 @@
-/* js/auth.js */
+/* js/auth.js - SECURE CLIENT-SIDE VERSION */
 
 // ==========================================
-// 🔧 CONFIGURATION 
+// 🔧 CONFIGURATION (PASTE YOUR KEYS HERE)
 // ==========================================
 const EMAILJS_SERVICE_ID = "service_gr6vthl";   
 const EMAILJS_TEMPLATE_ID = "template_r3t9j8l"; 
+const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 Minutes Auto-Logout
 
-let generatedOTP = null; // Stores the code temporarily
+let generatedOTP = null; 
+let idleTimer = null; 
 
 // ==========================================
-// 1. REGISTRATION
+// 0. SECURITY HELPERS
+// ==========================================
+
+// Prevent HTML Injection
+function sanitizeInput(str) {
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+}
+
+// Check if spam timer is active
+function checkCooldown() {
+    const unlockTime = localStorage.getItem('otp_unlock_time');
+    if (!unlockTime) return 0;
+    
+    const remaining = parseInt(unlockTime) - Date.now();
+    return remaining > 0 ? remaining : 0;
+}
+
+// Start Visual Timer on Button
+function startCooldownUI(btn) {
+    if(!btn) return;
+    btn.disabled = true;
+    
+    const timer = setInterval(() => {
+        const remaining = checkCooldown();
+        
+        if (remaining <= 0) {
+            clearInterval(timer);
+            localStorage.removeItem('otp_unlock_time');
+            btn.innerText = "Login / Resend OTP";
+            btn.disabled = false;
+        } else {
+            btn.innerText = `Resend in ${Math.ceil(remaining / 1000)}s`;
+        }
+    }, 1000);
+}
+
+// ==========================================
+// 1. REGISTRATION (With Domain Restriction)
 // ==========================================
 function registerUser() {
-    const fullName = document.getElementById("fullName").value;
+    // SECURITY: Sanitize Input
+    const rawName = document.getElementById("fullName").value;
+    const fullName = sanitizeInput(rawName);
+
     const collegeId = document.getElementById("regCollegeId").value;
-    const email = document.getElementById("regEmail").value;
+    const email = document.getElementById("regEmail").value.trim().toLowerCase();
     const password = document.getElementById("regPassword").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
 
     if (!fullName || !collegeId || !email || !password || !confirmPassword) {
         alert("Please fill in all fields.");
+        return;
+    }
+
+    // 🔒 SECURITY: DOMAIN CHECK
+    if (!email.endsWith("@rvce.edu.in")) {
+        alert("Registration Restricted: \nYou must use your official college email (@rvce.edu.in).");
+        return;
+    }
+
+    // PASSWORD STRENGTH CHECK
+    const strongPasswordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,}$/;
+    if (!strongPasswordRegex.test(password)) {
+        alert("Weak Password! \nMust be at least 6 characters, include 1 number (0-9) and 1 special symbol (!@#$%).");
         return;
     }
 
@@ -47,7 +104,6 @@ function registerUser() {
             });
         })
         .then(() => {
-            // C. Force Logout (User must login again to do 2FA)
             return auth.signOut();
         })
         .then(() => {
@@ -63,14 +119,27 @@ function registerUser() {
 }
 
 // ==========================================
-// 2. LOGIN FLOW (Step 1: Check Password)
+// 2. LOGIN FLOW (Email Only + Domain Check)
 // ==========================================
 async function loginUser() {
-    const input = document.getElementById("loginInput").value.trim();
+    // SECURITY: Check Sticky Timer
+    const remainingTime = checkCooldown();
+    if (remainingTime > 0) {
+        alert(`Please wait ${Math.ceil(remainingTime / 1000)} seconds before requesting another OTP.`);
+        return;
+    }
+
+    const input = document.getElementById("loginInput").value.trim().toLowerCase(); 
     const password = document.getElementById("password").value;
 
     if (!input || !password) {
         alert("Please fill in all fields.");
+        return;
+    }
+
+    // 🔒 SECURITY: DOMAIN CHECK
+    if (!input.endsWith("@rvce.edu.in")) {
+        alert("Access Denied: \nOnly official @rvce.edu.in email addresses are allowed.");
         return;
     }
 
@@ -79,47 +148,43 @@ async function loginUser() {
     btn.disabled = true;
 
     try {
-        let emailToLogin = input;
-
-        // Smart Resolve: If input is ID, find the Email
-        if (!input.includes("@")) {
-            // We keep this log as it's not sensitive, just process info
-            console.log("Looking up email for ID:", input);
-            const snapshot = await db.collection("users")
-                .where("collegeId", "==", input.toUpperCase())
-                .get();
-
-            if (snapshot.empty) {
-                throw new Error("College ID not found. Please register first.");
-            }
-            emailToLogin = snapshot.docs[0].data().email;
-        }
-
-        // A. Firebase Login (Checks Password)
-        await auth.signInWithEmailAndPassword(emailToLogin, password);
+        // A. Firebase Login (Directly with Email)
+        await auth.signInWithEmailAndPassword(input, password);
         
         // B. If password is correct, start 2FA
         btn.innerText = "Sending OTP...";
-        sendOTP(emailToLogin);
+        sendOTP(input);
 
     } catch (error) {
         console.error(error);
-        alert("Login Failed: " + error.message);
+        
+        // 🔒 SECURITY: Specific Error Messaging
+        if (error.code === 'auth/user-not-found') {
+            alert("Login Failed: This email is not registered.\nPlease go to the Register page.");
+        } else if (error.code === 'auth/wrong-password') {
+            alert("Login Failed: Incorrect Password.");
+        } else if (error.code === 'auth/too-many-requests') {
+            alert("Security Alert: Too many failed login attempts.\n\nYour account has been temporarily paused for security. Please try again in a few minutes.");
+        } else if (error.code === 'auth/network-request-failed') {
+            alert("Network Error: Please check your internet connection.");
+        } else {
+            alert(`Login Failed: ${error.message}`);
+        }
+        
         btn.innerText = "Login";
         btn.disabled = false;
     }
 }
 
 // ==========================================
-// 3. OTP HANDLING (Step 2: Send Email)
+// 3. OTP HANDLING (Direct EmailJS Integration)
 // ==========================================
 function sendOTP(email) {
     // 1. Generate 6-digit random number
     generatedOTP = Math.floor(100000 + Math.random() * 900000);
     
-    // [SECURE] Removed console.log of the OTP here
+    // [SECURE] We do NOT log the OTP to console anymore
 
-    // 2. Prepare Parameters
     const templateParams = {
         to_email: email,
         otp_code: String(generatedOTP),       
@@ -128,18 +193,21 @@ function sendOTP(email) {
 
     const btn = document.querySelector('button');
 
-    // 3. Send Email
+    // 2. Send via EmailJS
     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
         .then(function(response) {
             console.log('Email Sent Successfully!', response.status, response.text);
             showOTPModal(email); 
+            
+            // SECURITY: Set Sticky Cooldown (60s from now)
+            const unlockTime = Date.now() + 60000;
+            localStorage.setItem('otp_unlock_time', unlockTime);
+            
+            startCooldownUI(btn);
         })
         .catch(function(error) {
             console.error('FAILED...', error);
-            
-            // Detailed Error for debugging
-            alert(`Email Error: ${JSON.stringify(error)}\nCheck console for details.`);
-            
+            alert(`Email Error: ${JSON.stringify(error)}`);
             if(btn) {
                 btn.innerText = "Login";
                 btn.disabled = false;
@@ -158,29 +226,35 @@ function showOTPModal(email) {
 }
 
 function closeOTPModal() {
-    // If closed without verifying, log out immediately
     const modal = document.getElementById('otpModal');
     if(modal) modal.style.display = 'none';
     
+    // If closed without verifying, sign out
     auth.signOut().then(() => {
         const btn = document.querySelector('#loginForm button');
-        if(btn) {
+        // Resume button timer if exists
+        if (checkCooldown() <= 0 && btn) {
             btn.innerText = "Login";
             btn.disabled = false;
+        } else if (btn) {
+            startCooldownUI(btn); 
         }
     });
 }
 
 // ==========================================
-// 4. VERIFY OTP (Step 3: Check Code)
+// 4. VERIFY OTP
 // ==========================================
 function verifyOTP() {
     const userOtp = document.getElementById('otpInput').value;
     
-    // Compare input with the generated number
     if (parseInt(userOtp) === generatedOTP) {
-        // SUCCESS! Mark session as verified
+        // SUCCESS!
         sessionStorage.setItem('is2FAVerified', 'true');
+        
+        // Setup Auto-Logout Monitor
+        initSessionMonitor();
+        
         window.location.href = "index.html";
     } else {
         alert("Invalid OTP. Please try again.");
@@ -188,17 +262,37 @@ function verifyOTP() {
 }
 
 // ==========================================
-// 5. LOGOUT
+// 5. LOGOUT & SESSION MONITOR
 // ==========================================
 function logout() {
-    sessionStorage.removeItem('is2FAVerified'); // Clear 2FA flag
+    sessionStorage.removeItem('is2FAVerified'); 
+    localStorage.removeItem('otp_unlock_time'); 
+    if (idleTimer) clearTimeout(idleTimer);
+    
     auth.signOut().then(() => {
         window.location.href = "login.html";
     });
 }
 
+// SECURITY: Auto-Logout on Inactivity
+function initSessionMonitor() {
+    const resetTimer = () => {
+        if (idleTimer) clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+            alert("Session Expired due to inactivity.");
+            logout();
+        }, IDLE_TIMEOUT_MS);
+    };
+
+    // Listen for activity
+    window.onload = resetTimer;
+    document.onmousemove = resetTimer;
+    document.onkeypress = resetTimer;
+    document.ontouchstart = resetTimer; 
+}
+
 // ==========================================
-// 6. AUTH STATE LISTENER (The Brain)
+// 6. AUTH STATE LISTENER
 // ==========================================
 auth.onAuthStateChanged(async (user) => {
     const path = window.location.pathname;
@@ -211,24 +305,28 @@ auth.onAuthStateChanged(async (user) => {
     const userNameEl = document.getElementById("user-name");
     const userAvatarEl = document.getElementById("user-avatar");
     const userIdLabel = document.getElementById("user-id-label");
+    const loginFormBtn = document.querySelector('#loginForm button');
+
+    // On Load: Check if we are stuck in a cooldown
+    if (isPublicPage && checkCooldown() > 0 && loginFormBtn) {
+        startCooldownUI(loginFormBtn);
+    }
 
     if (user) {
-        // --- USER IS AUTHENTICATED ---
         console.log("User Auth Status: Logged In");
 
-        // SECURITY: If not 2FA verified, stay on login page or redirect there
         if (!isVerified && !isPublicPage) {
             console.warn("2FA Not Verified. Redirecting to Login.");
             window.location.href = "login.html";
             return;
         }
 
-        // If Verified, Update UI
         if (isVerified) {
+            initSessionMonitor(); // Start monitoring
+
             if (loginBtn) loginBtn.style.display = "none";
             if (userProfile) userProfile.style.display = "flex";
 
-            // Fetch Profile Data for Navbar
             if (userNameEl && userIdLabel) {
                 try {
                     const doc = await db.collection("users").doc(user.uid).get();
@@ -238,7 +336,6 @@ auth.onAuthStateChanged(async (user) => {
                         userAvatarEl.innerText = data.fullName ? data.fullName.charAt(0).toUpperCase() : "U";
                         userIdLabel.innerText = `ID: ${data.collegeId}`;
                     } else {
-                        // Fallback if DB record missing
                         userNameEl.innerText = "User";
                         userIdLabel.innerText = user.email;
                     }
@@ -247,22 +344,19 @@ auth.onAuthStateChanged(async (user) => {
                 }
             }
 
-            // If on login page but verified, go to dashboard
             if (isPublicPage) {
                 window.location.href = "index.html";
             }
         }
     } else {
-        // --- USER IS LOGGED OUT ---
         console.log("User Auth Status: Signed Out");
         sessionStorage.removeItem('is2FAVerified');
 
         if (loginBtn) loginBtn.style.display = "block";
         if (userProfile) userProfile.style.display = "none";
 
-        // Protect Dashboard Routes
         if (!isPublicPage && (path.includes("vote.html") || path.includes("results.html"))) {
-             // window.location.href = "login.html"; // Uncomment to enforce strict security
+             // window.location.href = "login.html"; 
         }
     }
 });

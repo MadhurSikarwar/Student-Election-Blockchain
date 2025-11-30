@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,19 +13,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
 
-    <!-- EMAILJS SDK (For sending OTPs) -->
+    <!-- EMAILJS SDK -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
+    
     <!-- ⚠️ IMPORTANT: PASTE YOUR PUBLIC KEY BELOW ⚠️ -->
     <script type="text/javascript">
-        (function () {
+        (function() {
             // REPLACE "YOUR_PUBLIC_KEY" WITH YOUR ACTUAL KEY from EmailJS Dashboard
-            // Example: emailjs.init("user_XyZ123abc...");
-            emailjs.init("HjGfl6rR-G_twhWoK");
+            emailjs.init("HjGfl6rR-G_twhWoK"); 
         })();
     </script>
 </head>
-
 <body>
 
     <nav class="navbar glass">
@@ -44,11 +41,12 @@
         <div class="glass login-card">
             <h2>Welcome Back</h2>
             <p class="subtitle">Secure Blockchain Login</p>
-
+            
             <form id="loginForm" onsubmit="event.preventDefault(); loginUser();">
+                <!-- UPDATED INPUT FIELD -->
                 <div class="input-group">
-                    <label>College ID or Email</label>
-                    <input type="text" id="loginInput" placeholder="Enter ID or Email" required>
+                    <label>Registered Email</label>
+                    <input type="email" id="loginInput" placeholder="name@student.rvce.edu" required>
                 </div>
 
                 <div class="input-group">
@@ -71,19 +69,16 @@
             <h2>🔐 2FA Verification</h2>
             <p>We sent a 6-digit code to your email.</p>
             <p id="otpEmailDisplay" style="color: var(--secondary-color); font-size: 0.9rem; margin-bottom: 20px;"></p>
-
+            
             <div class="input-group">
-                <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" maxlength="6"
-                    style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;">
+                <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" maxlength="6" style="text-align: center; letter-spacing: 5px; font-size: 1.5rem;">
             </div>
 
             <button class="btn full-width" onclick="verifyOTP()">Verify Code</button>
-            <button class="btn-secondary full-width" onclick="closeOTPModal()"
-                style="margin-top: 10px; border: none;">Cancel</button>
+            <button class="btn-secondary full-width" onclick="closeOTPModal()" style="margin-top: 10px; border: none;">Cancel</button>
         </div>
     </div>
 
     <script src="js/auth.js"></script>
 </body>
-
 </html>

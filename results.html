@@ -1,37 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Results | E-Vote</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/results.css">
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 
+    <!-- 1. Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-
     <script src="js/firebase-config.js"></script>
-</head>
 
+    <!-- 2. BLOCKCHAIN SDK & CONFIG (CRITICAL FIX) -->
+    <!-- This provides the 'loadWeb3' function -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script src="js/web3-config.js"></script>
+</head>
 <body>
 
+    <!-- Navigation Bar -->
     <nav class="navbar glass">
         <div class="logo" onclick="window.location.href='index.html'">E-Vote 2025</div>
+        
+        <!-- Center Navigation -->
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="vote.html">Vote</a></li>
             <li><a href="results.html" class="active">Results</a></li>
-            <li><a href="login.html">Login</a></li>
             <li><a href="register.html">Register</a></li>
         </ul>
+
+        <!-- Right Side Auth Section -->
+        <div class="auth-section">
+            <button class="btn-login" id="login-btn" onclick="window.location.href='login.html'">Login</button>
+            <div class="user-profile" id="user-profile" style="display: none;">
+                <div class="avatar-circle" id="user-avatar">U</div>
+                <span class="profile-name" id="user-name">User</span>
+                <div class="profile-dropdown">
+                    <div class="user-id-display" id="user-id-label">Loading...</div>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
     </nav>
 
+    <!-- Results Section -->
     <main class="container fade-in">
         <header class="results-header">
             <h1>Live Election Analytics</h1>
-            <p>Real-time data fetched from the blockchain ledger.</p>
+            <p>Real-time data fetched from the Ethereum Blockchain.</p>
         </header>
 
         <div class="glass results-card">
@@ -40,46 +59,49 @@
                 <span class="live-indicator">● Live</span>
             </div>
 
+            <!-- Result Item 1 -->
             <div class="result-item">
                 <div class="candidate-meta">
                     <span class="name">Alex Reynolds</span>
-                    <span class="vote-count" id="count-1">450 Votes</span>
+                    <span class="vote-count" id="count-1">0 Votes</span>
                 </div>
                 <div class="progress-bg">
-                    <div class="progress-fill" id="bar-1" style="width: 65%;">
-                        <span class="percentage">65%</span>
+                    <div class="progress-fill" id="bar-1" style="width: 0%;">
+                        <span class="percentage">0%</span>
                     </div>
                 </div>
             </div>
 
+            <!-- Result Item 2 -->
             <div class="result-item">
                 <div class="candidate-meta">
                     <span class="name">Sarah Jenkins</span>
-                    <span class="vote-count" id="count-2">180 Votes</span>
+                    <span class="vote-count" id="count-2">0 Votes</span>
                 </div>
                 <div class="progress-bg">
-                    <div class="progress-fill color-2" id="bar-2" style="width: 25%;">
-                        <span class="percentage">25%</span>
+                    <div class="progress-fill color-2" id="bar-2" style="width: 0%;">
+                        <span class="percentage">0%</span>
                     </div>
                 </div>
             </div>
 
+            <!-- Result Item 3 -->
             <div class="result-item">
                 <div class="candidate-meta">
                     <span class="name">Mike Thompson</span>
-                    <span class="vote-count" id="count-3">70 Votes</span>
+                    <span class="vote-count" id="count-3">0 Votes</span>
                 </div>
                 <div class="progress-bg">
-                    <div class="progress-fill color-3" id="bar-3" style="width: 10%;">
-                        <span class="percentage">10%</span>
+                    <div class="progress-fill color-3" id="bar-3" style="width: 0%;">
+                        <span class="percentage">0%</span>
                     </div>
                 </div>
             </div>
 
             <div class="total-stats">
-                <p>Total Votes Cast: <span id="total-votes">700</span></p>
+                <p>Total Votes Cast: <span id="total-votes">0</span></p>
             </div>
-
+            
         </div>
 
         <div class="refresh-container">
@@ -88,8 +110,9 @@
 
     </main>
 
-    <script src="blockchain/election.js"></script>
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <!-- Main Logic -->
     <script src="js/results.js"></script>
 </body>
-
 </html>

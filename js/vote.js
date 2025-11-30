@@ -1,83 +1,100 @@
 /* js/vote.js */
 
 /**
- * CAST VOTE FUNCTION
- * Uses a Firebase Transaction to ensure integrity.
+ * CAST VOTE FUNCTION (Hybrid: Blockchain + Database)
  */
 async function castVote(candidateId, candidateName) {
     
-    // 1. Check if user is logged in
+    // 1. Check Authentication (Firebase)
     const user = auth.currentUser;
-    
     if (!user) {
-        alert("You must be logged in to vote!");
+        alert("Please login to vote.");
         window.location.href = "login.html";
         return;
     }
 
-    const confirmVote = confirm(`Are you sure you want to vote for ${candidateName}?\nThis action cannot be undone.`);
+    // 2. Ensure Web3 is ready
+    if (window.ethereum) {
+        try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            userAccount = accounts[0];
+            
+            if (!electionContract) {
+                await loadWeb3();
+            }
+        } catch (error) {
+            alert("MetaMask Connection Failed. Please try again.");
+            return;
+        }
+    } else {
+        alert("MetaMask not found! Please install it.");
+        return;
+    }
+
+    // 3. Confirm Intent
+    const confirmVote = confirm(`Confirm vote for ${candidateName}?\n\n1. Click OK.\n2. MetaMask will open.\n3. Click 'Confirm' to pay the gas fee.`);
     if (!confirmVote) return;
 
     // UI Feedback
     const buttons = document.querySelectorAll('button');
     buttons.forEach(btn => {
         btn.disabled = true;
-        btn.innerText = "Processing...";
+        btn.innerText = "Check MetaMask...";
     });
 
-    // 2. Define References
-    const userRef = db.collection("users").doc(user.uid);
-    // Note: Ensure you have a 'candidates' collection. IDs should match 1, 2, 3 strings or numbers.
-    // We convert ID to string to use as Document ID
-    const candidateRef = db.collection("candidates").doc(String(candidateId));
-
     try {
-        await db.runTransaction(async (transaction) => {
-            
-            // A. READ: Get the fresh user data
-            const userDoc = await transaction.get(userRef);
-            
-            if (!userDoc.exists) {
-                throw "User data not found.";
-            }
+        console.log(`[Web3] Voting for ID: ${candidateId} from ${userAccount}`);
+        
+        // ------------------------------------------------
+        // 4. BLOCKCHAIN TRANSACTION (Primary Record)
+        // ------------------------------------------------
+        await electionContract.methods.vote(candidateId).send({ from: userAccount });
 
-            // B. CHECK: Has the user already voted?
-            if (userDoc.data().hasVoted) {
-                throw "You have ALREADY voted. Double voting is not allowed.";
-            }
+        console.log("[Web3] Transaction Successful!");
 
-            // C. WRITE: Update Candidate Count & User Status
-            // We use 'increment' so we don't need to read the candidate count first
-            transaction.set(candidateRef, { 
-                name: candidateName,
-                voteCount: firebase.firestore.FieldValue.increment(1) 
-            }, { merge: true });
+        // ------------------------------------------------
+        // 5. FIREBASE UPDATE (User Status Only)
+        // ------------------------------------------------
+        // FIX: We use .set({merge: true}) instead of .update()
+        // This ensures it works even if the user profile was missing in the database.
+        const userRef = db.collection("users").doc(user.uid);
 
-            transaction.update(userRef, { 
-                hasVoted: true,
-                votedFor: candidateId, // Optional: tracking
-                votedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        });
+        await userRef.set({ 
+            hasVoted: true,
+            votedTxHash: "Confirmed on Blockchain", 
+            votedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            // We verify the email exists to be safe, defaulting to Auth email if missing in DB
+            email: user.email 
+        }, { merge: true });
 
-        // 3. Success
-        alert(`✅ Success! \n\nYour vote for ${candidateName} has been recorded.`);
+        // 6. Success
+        alert(`✅ VOTE SUCCESSFUL!\n\nRecorded on Blockchain.`);
         window.location.href = "results.html";
 
     } catch (error) {
-        console.error("Voting failed:", error);
+        console.error("Voting Failed:", error);
         
-        // Handle specific double-vote error vs network error
-        if (typeof error === "string" && error.includes("ALREADY")) {
-            alert("⚠️ Security Alert: " + error);
+        if (error.code === 4001) {
+            alert("Transaction Cancelled: You rejected the request in MetaMask.");
+        } else if (error.message && error.message.includes("revert")) {
+            alert("Vote Rejected!\n\nReason: This Wallet Address has ALREADY voted.");
+        } else if (error.message && error.message.includes("Internal JSON-RPC error")) {
+            alert("Ganache Error!\n\nFix:\n1. Open MetaMask\n2. Settings -> Advanced -> Clear activity data\n3. Try again.");
         } else {
-            alert("Transaction failed. Please try again.");
+            alert("Technical Error: " + error.message);
         }
 
-        // Reset buttons
+        // Reset Buttons
         buttons.forEach(btn => {
             btn.disabled = false;
             btn.innerText = "Vote";
         });
     }
 }
+
+// Auto-load on page start
+window.addEventListener('load', async () => {
+    setTimeout(async () => {
+        await loadWeb3();
+    }, 500);
+});

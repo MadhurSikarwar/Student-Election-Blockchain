@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cast Your Vote | E-Vote</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/vote.css">
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 
+    <!-- 1. Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-
     <script src="js/firebase-config.js"></script>
-</head>
 
+    <!-- 2. Blockchain SDK (CRITICAL: This was likely missing!) -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+    <script src="js/web3-config.js"></script>
+</head>
 <body>
 
+    <!-- Navigation Bar -->
     <nav class="navbar glass">
         <div class="logo" onclick="window.location.href='index.html'">E-Vote 2025</div>
         <ul class="nav-links">
@@ -28,18 +31,20 @@
         </ul>
     </nav>
 
+    <!-- Main Voting Section -->
     <main class="container fade-in">
         <header class="vote-header">
             <h1>Student Council Election</h1>
             <p>Select your preferred candidate. This action is irreversible and recorded on the blockchain.</p>
         </header>
 
+        <!-- Candidate Grid -->
         <div class="candidates-grid">
-
+            
+            <!-- Candidate 1 -->
             <div class="candidate-card glass">
                 <div class="card-image">
-                    <img src="https://ui-avatars.com/api/?name=Alex+R&background=6a11cb&color=fff&size=128"
-                        alt="Candidate">
+                    <img src="https://ui-avatars.com/api/?name=Alex+R&background=6a11cb&color=fff&size=128" alt="Candidate">
                 </div>
                 <div class="card-info">
                     <h3>Alex Reynolds</h3>
@@ -50,10 +55,10 @@
                 </div>
             </div>
 
+            <!-- Candidate 2 -->
             <div class="candidate-card glass">
                 <div class="card-image">
-                    <img src="https://ui-avatars.com/api/?name=Sarah+J&background=2575fc&color=fff&size=128"
-                        alt="Candidate">
+                    <img src="https://ui-avatars.com/api/?name=Sarah+J&background=2575fc&color=fff&size=128" alt="Candidate">
                 </div>
                 <div class="card-info">
                     <h3>Sarah Jenkins</h3>
@@ -64,10 +69,10 @@
                 </div>
             </div>
 
+            <!-- Candidate 3 -->
             <div class="candidate-card glass">
                 <div class="card-image">
-                    <img src="https://ui-avatars.com/api/?name=Mike+T&background=ff416c&color=fff&size=128"
-                        alt="Candidate">
+                    <img src="https://ui-avatars.com/api/?name=Mike+T&background=ff416c&color=fff&size=128" alt="Candidate">
                 </div>
                 <div class="card-info">
                     <h3>Mike Thompson</h3>
@@ -81,8 +86,8 @@
         </div>
     </main>
 
-    <script src="blockchain/election.js"></script>
+    <!-- 3. Logic Scripts (Must be at the end) -->
+    <script src="js/auth.js"></script>
     <script src="js/vote.js"></script>
 </body>
-
 </html>
